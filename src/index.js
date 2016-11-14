@@ -1,4 +1,9 @@
+import {writeFileSync, readFileSync} from 'fs';
 import Promise from 'promise';
+import {sync as mkdirp} from 'mkdirp';
+import {sync as rimraf} from 'rimraf';
+import {transformFileSync} from 'babel-core';
+import {sync as lsr} from 'lsr';
 import {setServerLocation} from './config/node-server-location';
 
 export function register() {
@@ -48,5 +53,33 @@ export function start(server) {
   });
 }
 export function build() {
+  process.env.NODE_ENV = 'production';
+  rimraf('./build');
   require('../react-scripts/build-webpack');
+  lsr('./src/server').forEach(entry => {
+    if (entry.isDirectory()) {
+      mkdirp('./build/backend' + entry.path.substr(1));
+    } else if (entry.isFile()) {
+      if (/\.js$/.test(entry.path)) {
+        const code = transformFileSync(
+          entry.fullPath,
+          {
+            babelrc: false,
+            presets: [require.resolve('babel-preset-moped')],
+          },
+        ).code;
+        writeFileSync(
+          './build/backend' + entry.path.substr(1),
+          code,
+        );
+      } else {
+        writeFileSync(
+          './build/backend' + entry.path.substr(1),
+          readFileSync(
+            entry.fullPath,
+          ),
+        );
+      }
+    }
+  });
 }
