@@ -1,6 +1,6 @@
 {
   "name": "moped-scripts",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "main": "lib/index.js",
   "description": "Scripts for building moped projects",
   "keywords": [],
