@@ -1,10 +1,17 @@
 import {writeFileSync, readFileSync} from 'fs';
+import ConvertAnsi from 'ansi-to-html';
 import Promise from 'promise';
 import {sync as mkdirp} from 'mkdirp';
 import {sync as rimraf} from 'rimraf';
 import {transformFileSync} from 'babel-core';
 import {sync as lsr} from 'lsr';
 import {setServerLocation} from './config/node-server-location';
+const convertAnsi = new ConvertAnsi({
+  fg: '#000',
+  bg: '#FFF',
+  newline: true,
+  escapeXML: true,
+});
 
 export function register() {
   process.env.NODE_ENV = 'development';
@@ -15,11 +22,41 @@ export function register() {
   require('dotenv').config({silent: true});
   require('babel-register')({
     ignore(filename) {
-      return !(/(\/|\\)src(\/|\\)server(\/|\\)/.test(filename) && !/node_modules/.test(filename));
+      return !(
+        /(\/|\\)src(\/|\\)server(\/|\\)/.test(filename) && !/node_modules/.test(filename)
+      );
     },
     babelrc: false,
     presets: [require.resolve('babel-preset-moped')],
   });
+}
+export function loadServerLive(filename) {
+  // eslint-disable-next-line
+  let requestHandler = (req, res, next) => res.send('Not started yet');
+  require('babel-live')(filename, {
+    // TODO: offer memoised versions of common database connection libraries
+  }, {
+    highlightCode: !/^win/.test(process.platform),
+  },
+  v => {
+    requestHandler = v.default;
+  },
+  err => {
+    // error is already a string
+    console.error(err);
+    requestHandler = (req, res, next) => {
+      res.send(
+        `
+          There was a build error:
+          <pre>${convertAnsi.toHtml(global.lastError)}</pre>
+        `,
+      );
+    };
+  });
+  return (req, res, next) => {
+    // always call the latest requestHandler, which gets updated on each change
+    requestHandler(req, res, next);
+  };
 }
 
 export function start(server) {

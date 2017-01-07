@@ -14,8 +14,10 @@
     "moped-scripts": "./bin/moped-scripts.js"
   },
   "dependencies": {
+    "ansi-to-html": "^0.5.0",
     "autoprefixer": "^6.5.1",
     "babel-core": "^6.18.2",
+    "babel-live": "^3.1.1",
     "babel-loader": "^6.2.7",
     "babel-preset-moped": "^1.0.0",
     "babel-runtime": "^6.3.19",
