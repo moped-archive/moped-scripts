@@ -33,10 +33,12 @@ export function register() {
 export function loadServerLive(filename) {
   // eslint-disable-next-line
   let requestHandler = (req, res, next) => res.send('Not started yet');
-  require('babel-live')(filename, {
+  require('babel-live')(require.resolve(filename), {
     // TODO: offer memoised versions of common database connection libraries
   }, {
     highlightCode: !/^win/.test(process.platform),
+    babelrc: false,
+    presets: [require.resolve('babel-preset-moped')],
   },
   v => {
     requestHandler = v.default;
@@ -48,7 +50,7 @@ export function loadServerLive(filename) {
       res.send(
         `
           There was a build error:
-          <pre>${convertAnsi.toHtml(global.lastError)}</pre>
+          <pre>${convertAnsi.toHtml(err)}</pre>
         `,
       );
     };
