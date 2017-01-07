@@ -55,10 +55,21 @@ export function loadServerLive(filename) {
       );
     };
   });
-  return (req, res, next) => {
+  function requestHandlerProxy(req, res, next) {
     // always call the latest requestHandler, which gets updated on each change
     requestHandler(req, res, next);
+  }
+  requestHandlerProxy._serializeUser = (user) => {
+    return requestHandler._serializeUser
+     ? requestHandler._serializeUser(user)
+     : user;
   };
+  requestHandlerProxy._deserializeUser = (user) => {
+    return requestHandler._deserializeUser
+     ? requestHandler._deserializeUser(user)
+     : user;
+  };
+  return requestHandlerProxy;
 }
 
 export function start(server) {
@@ -75,7 +86,7 @@ export function start(server) {
         proxy = createProxy({
           target: webpackResult.WEBPACK_DEV_SERVER_LOCATION,
           pathRewrite: {
-            '.*': '/',
+            '.*': '/index.html',
           },
         });
       }
